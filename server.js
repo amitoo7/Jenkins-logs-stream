@@ -8,8 +8,8 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server);
 
-const JENKINS_URL = 'http://34.67.199.72:9090';
-const JOB_NAME = 'Mynodejob'; // replace with your job name
+const JENKINS_URL = process.env,JENKINS_USER;
+const JOB_NAME = process.env,JOB_NAME; // replace with your job name
 const JENKINS_USER = process.env.JENKINS_USER; // Jenkins username from environment variable
 const JENKINS_TOKEN = process.env.JENKINS_TOKEN; // Jenkins API token from environment variable
 
