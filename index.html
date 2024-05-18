@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Jenkins Log Stream</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .build {
+      margin-bottom: 20px;
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      padding: 20px;
+    }
+    .logs {
+      white-space: pre-wrap;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 10px;
+      height: 200px;
+      overflow-y: scroll;
+      background: #f9f9f9;
+    }
+    .logs .info {
+      color: #00f;
+    }
+    .logs .warning {
+      color: #ff8c00;
+    }
+    .logs .error {
+      color: #f00;
+      font-weight: bold;
+    }
+    .hidden {
+      display: none;
+    }
+    button {
+      background: #007bff;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      padding: 10px 20px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>Jenkins Job Logs</h1>
+  <div id="logs-container"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    var socket = io();
+    var logsContainer = document.getElementById('logs-container');
+    var isFirstBuild = true;
+
+    socket.on('logs', function(data) {
+      if (data.buildNumber !== null) {
+        displayBuildLogs(data.buildNumber, data.logs);
+      } else {
+        logsContainer.textContent = data.logs;
+      }
+    });
+
+    socket.on('new-build', function(data) {
+      displayBuildLogs(data.buildNumber, data.logs);
+    });
+
+    function displayBuildLogs(buildNumber, logs) {
+      var buildDiv = document.createElement('div');
+      buildDiv.className = 'build';
+
+      var button = document.createElement('button');
+      button.textContent = 'Show Logs for Build #' + buildNumber;
+      button.onclick = function() {
+        var logsDiv = buildDiv.querySelector('.logs');
+        if (logsDiv.classList.contains('hidden')) {
+          logsDiv.classList.remove('hidden');
+          button.textContent = 'Hide Logs for Build #' + buildNumber;
+        } else {
+          logsDiv.classList.add('hidden');
+          button.textContent = 'Show Logs for Build #' + buildNumber;
+        }
+      };
+
+      var logsDiv = document.createElement('div');
+      logsDiv.className = 'logs';
+      logsDiv.innerHTML = beautifyLogs(logs);
+
+      if (isFirstBuild) {
+        button.textContent = 'Hide Logs for Build #' + buildNumber;
+        isFirstBuild = false;
+      } else {
+        logsDiv.classList.add('hidden');
+      }
+
+      buildDiv.appendChild(button);
+      buildDiv.appendChild(logsDiv);
+      logsContainer.insertBefore(buildDiv, logsContainer.firstChild); // Insert at the top
+    }
+
+    function beautifyLogs(logs) {
+      var lines = logs.split('\n');
+      return lines.map(function(line) {
+        if (line.includes('INFO')) {
+          return '<span class="info">' + line + '</span>';
+        } else if (line.includes('WARNING')) {
+          return '<span class="warning">' + line + '</span>';
+        } else if (line.includes('ERROR')) {
+          return '<span class="error">' + line + '</span>';
+        } else {
+          return line;
+        }
+      }).join('<br>');
+    }
+  </script>
+</body>
+</html>
